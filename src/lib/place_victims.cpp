@@ -1,10 +1,9 @@
 #include "place_victims.hpp"
 
 void place_victims_randomly(const Network& network, int n, ivec& victims, int seed) {
-    int maxdepth = *std::max_element(network.depth.begin(), network.depth.end());
     victims.reserve(network.size());
     for(int i=0; i<network.size(); ++i) {
-        if(network.netsize[i] == 0 && network.depth[i] == maxdepth) {
+        if(network.netsize[i] == 0 && network.depth[i] == network.height) {
             victims.push_back(i);
         }
     }

@@ -59,6 +59,7 @@ void Network::grow(int u, int level, bool fully_expand_last_level, const GrowPar
         int first_child = size();
         // make children
         rng2.seed(rng1());
+        height = std::max(height, depth[u] + 1);
         for(int i=0; i<n; ++i) {
             int u2 = ufirst + i;
             int n2 = do_sigma_n(grow_params.num_children, grow_params.num_children_sigma, rng2);

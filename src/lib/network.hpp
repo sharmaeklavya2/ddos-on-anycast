@@ -31,6 +31,7 @@ public:
     // netsize[u] is 0 iff u is a physical node
     // Otherwise netsize[u] is the number of nodes in the network belonging to the virtual node u.
     ivec depth;
+    int height;
     int pivot;  // index of a physical node
 
     void update_pivot() {

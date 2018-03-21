@@ -5,6 +5,7 @@
 void Network::init(int n, const ipvec& edges, bool virtual_parent, int side_connectivity) {
     // if side_connectivity is positive, that many side_links are made for each edge
     // otherwise in_links are used.
+    height = 0;
     int vparent = -1;
     if(virtual_parent) {
         vparent = 0;
@@ -164,6 +165,17 @@ bool Network::long_sanity_check() const {
         if(vnode >= 0) {
             netsize2[vnode]++;
         }
+    }
+
+    int height2 = 0;
+    for(int u=0; u<size(); ++u) {
+        if(netsize[u] == 0 && depth[u] > height2) {
+            height2 = depth[u];
+        }
+    }
+    if(height2 != height) {
+        fprintf(stderr, "height should be %d instead of %d\n", height2, height);
+        return false;
     }
 
     for(int u=0; u<size(); ++u) {
