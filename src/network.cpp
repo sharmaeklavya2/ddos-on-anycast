@@ -1,5 +1,8 @@
 #include "lib/network.hpp"
 #include "lib/graph_gen.hpp"
+#include "lib/place_victims.hpp"
+#include "lib/attack.hpp"
+#include <map>
 
 int main() {
     int retval = 0;
@@ -32,7 +35,6 @@ int main() {
     printf("\n");
 
     network.grow(0, 3, false, grow_params, seed);
-    printf("\n");
 
     if(!network.long_sanity_check()) {
         puts("Network has inconsistencies!");
@@ -42,11 +44,28 @@ int main() {
     printf("Edges: %d\n", network.num_edges());
     printf("\n");
 
-    network.print(stdout, false);
+    // network.print(stdout, false);
 
-    // ipvec l = network.edge_list();
-    // for(const iipair& p: l) {
-        // printf("%d %d\n", p.first, p.second);
-    // }
+    ivec victims, targets;
+    place_victims_randomly(network, 9, victims, seed);
+    attack(network, victims, targets, 100);
+
+    std::map<int, int> freq;
+    for(int v: victims) {
+        freq[v] = 0;
+    }
+    for(int i=0; i<network.size(); ++i) {
+        if(network.netsize[i] == 0) {
+            freq[targets[i]]++;
+        }
+    }
+    cout << "freq: " << freq << endl;
+
+    /*
+    ipvec l = network.edge_list();
+    for(const iipair& p: l) {
+        printf("%d %d\n", p.first, p.second);
+    }
+    */
     return retval;
 }
