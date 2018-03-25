@@ -28,4 +28,18 @@ inline bool find_and_erase(C& c, typename C::value_type x) {
     }
 }
 
+template<class C>
+void print_icont(FILE* fp, const C& c, const char* sep, const char* begs, const char* ends) {
+    fprintf(fp, "%s", begs);
+    int n = c.size();
+    if(n > 0) {
+        typename C::const_iterator it = c.begin();
+        fprintf(fp, "%d", *(it++));
+        while(it != c.end()) {
+            fprintf(fp, "%s%d", sep, *(it++));
+        }
+    }
+    fprintf(fp, "%s", ends);
+}
+
 #endif  // UTIL_HPP

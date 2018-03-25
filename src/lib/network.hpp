@@ -93,6 +93,7 @@ public:
     ipvec edge_list() const;
 
     void print(ostream& os) const;
+    void print(FILE* fp, bool print_virtual) const;
 
     bool basic_sanity_check() const;
     bool long_sanity_check() const;

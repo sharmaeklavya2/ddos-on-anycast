@@ -126,6 +126,22 @@ void Network::print(ostream& os) const {
         << "\n)\n";
 }
 
+void Network::print(FILE* fp, bool print_virtual) const {
+    for(int u=0; u<size(); ++u) {
+        if(print_virtual || netsize[u] == 0) {
+            fprintf(fp, "%d:\n  nid: %d, netsize: %d, depth: %d,\n", u, nid[u], netsize[u], depth[u]);
+            fprintf(fp, "  in_nbrs: ");
+            print_icont(fp, in_nbrs[u], ", ", "[", "],\n");
+            fprintf(fp, "  side_nbrs: ");
+            print_icont(fp, side_nbrs[u], ", ", "[", "],\n");
+            fprintf(fp, "  up_nbrs: ");
+            print_icont(fp, up_nbrs[u], ", ", "[", "],\n");
+            fprintf(fp, "  down_nbrs: ");
+            print_icont(fp, down_nbrs[u], ", ", "[", "]\n");
+        }
+    }
+}
+
 ostream& operator<<(ostream& os, const Network& network) {
     network.print(os);
     return os;

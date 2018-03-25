@@ -42,7 +42,7 @@ int main() {
     printf("Edges: %d\n", network.num_edges());
     printf("\n");
 
-    // cout << network << endl;
+    network.print(stdout, false);
 
     // ipvec l = network.edge_list();
     // for(const iipair& p: l) {
