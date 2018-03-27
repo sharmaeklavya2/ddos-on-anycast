@@ -22,7 +22,7 @@ LIB_BUILDDIR := $(BUILDDIR)/lib
 CXX := g++ $(FLAGS)
 
 .PHONY: all
-all: $(BUILDDIR)/network $(BUILDDIR)/graph_gen;
+all: $(BUILDDIR)/simulate $(BUILDDIR)/graph_gen;
 
 .PHONY: clean
 clean:
@@ -65,7 +65,7 @@ $(LIB_BUILDDIR)/attack.o: $(LIB_SRCDIR)/attack.cpp $(ATTACK_HSET)
 
 # Executable files
 
-$(BUILDDIR)/network.o: src/network.cpp $(GRAPH_GEN_HSET) $(NETWORK_HSET)
+$(BUILDDIR)/simulate.o: src/simulate.cpp $(GRAPH_GEN_HSET) $(NETWORK_HSET)
 	@mkdir -p $(BUILDDIR)
 	$(CXX) -c $< -o $@
 
@@ -73,7 +73,7 @@ $(BUILDDIR)/graph_gen.o: src/graph_gen.cpp $(GRAPH_GEN_HSET)
 	@mkdir -p $(BUILDDIR)
 	$(CXX) -c $< -o $@
 
-$(BUILDDIR)/network: $(LIB_OBJS) $(BUILDDIR)/network.o
+$(BUILDDIR)/simulate: $(LIB_OBJS) $(BUILDDIR)/simulate.o
 	$(CXX) $^ -o $@
 
 $(BUILDDIR)/graph_gen: $(LIB_OBJS) $(BUILDDIR)/graph_gen.o
