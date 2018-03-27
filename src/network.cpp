@@ -8,33 +8,51 @@ static int iipair_second_rcmp(const iipair& a, const iipair& b) {
     return a.second > b.second;
 }
 
-int main() {
+const char usage_fmt[] = "usage: %s"
+" graphgen_n graphgen_avg_degree graphgen_n_sigma"
+" num_children num_children_sigma"
+" prob_multi_upstream prob_self_multi_upstream"
+" prob_side_peering prob_self_side_peering"
+" n_layers n_victims seed"
+"\n";
 
-    RandomConnectedGraphGen rcgen(8, 3.0);
-    NormalOrderGraphGen explode_graph_gen(0.25, rcgen);
+using std::atoi;
+using std::atof;
 
-    GrowParams grow_params = {
-        8, // num_children
-        0.25, // num_children_sigma
-        0.1, // prob_multi_upstream
-        0.3, // prob_self_multi_upstream
-        0.1, // prob_side_peering
-        0.8, // prob_self_side_peering
-        &explode_graph_gen,
-    };
+int main(int argc, char* argv[]) {
+    if(argc != 13) {
+        fprintf(stderr, usage_fmt, argv[0]);
+        return 2;
+    }
 
-    int seed;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-    scanf("%d", &seed);
-#pragma GCC diagnostic pop
+    int graphgen_n;
+    double graphgen_n_sigma, graphgen_avg_degree;
+    GrowParams grow_params;
+
+    graphgen_n = atoi(argv[1]);
+    graphgen_avg_degree = atof(argv[2]);
+    graphgen_n_sigma = atof(argv[3]);
+    grow_params.num_children = atoi(argv[4]);
+    grow_params.num_children_sigma = atof(argv[5]);
+    grow_params.prob_multi_upstream = atof(argv[6]);
+    grow_params.prob_self_multi_upstream = atof(argv[7]);
+    grow_params.prob_side_peering = atof(argv[8]);
+    grow_params.prob_self_side_peering = atof(argv[9]);
+    int n_layers = atoi(argv[10]);
+    int n_victims = atoi(argv[11]);
+    int seed = atoi(argv[12]);
+
+    RandomConnectedGraphGen rcgen(graphgen_n, graphgen_avg_degree);
+    NormalOrderGraphGen explode_graph_gen(graphgen_n_sigma, rcgen);
+    grow_params.p_explode_graph_gen = &explode_graph_gen;
+
     Network network;
     if(!network.long_sanity_check()) {
         puts("Network has inconsistencies!");
         return 1;
     }
 
-    network.grow(0, 3, false, grow_params, seed);
+    network.grow(0, n_layers, false, grow_params, seed);
 
     if(!network.long_sanity_check()) {
         puts("Network has inconsistencies!");
@@ -46,7 +64,7 @@ int main() {
     // network.print(stdout, false);
 
     ivec victims, targets;
-    place_victims_randomly(network, 9, victims, seed);
+    place_victims_randomly(network, n_victims, victims, seed);
     attack(network, victims, targets, 100);
 
     std::map<int, int> freq;
