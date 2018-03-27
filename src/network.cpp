@@ -4,8 +4,11 @@
 #include "lib/attack.hpp"
 #include <map>
 
+static int iipair_second_rcmp(const iipair& a, const iipair& b) {
+    return a.second > b.second;
+}
+
 int main() {
-    int retval = 0;
 
     RandomConnectedGraphGen rcgen(8, 3.0);
     NormalOrderGraphGen explode_graph_gen(0.25, rcgen);
@@ -28,21 +31,17 @@ int main() {
     Network network;
     if(!network.long_sanity_check()) {
         puts("Network has inconsistencies!");
-        retval = 1;
+        return 1;
     }
-    printf("Vertices: %d\n", network.num_vertices());
-    printf("Edges: %d\n", network.num_edges());
-    printf("\n");
 
     network.grow(0, 3, false, grow_params, seed);
 
     if(!network.long_sanity_check()) {
         puts("Network has inconsistencies!");
-        retval = 1;
+        return 1;
     }
     printf("Vertices: %d\n", network.num_vertices());
     printf("Edges: %d\n", network.num_edges());
-    printf("\n");
 
     // network.print(stdout, false);
 
@@ -51,15 +50,24 @@ int main() {
     attack(network, victims, targets, 100);
 
     std::map<int, int> freq;
+    int leaves = 0;
     for(int v: victims) {
         freq[v] = 0;
     }
     for(int i=0; i<network.size(); ++i) {
-        if(network.netsize[i] == 0) {
+        if(network.netsize[i] == 0 && network.depth[i] == network.height) {
+            leaves++;
             freq[targets[i]]++;
         }
     }
-    cout << "freq: " << freq << endl;
+    vector<iipair> freq2(freq.begin(), freq.end());
+    std::sort(freq2.begin(), freq2.end(), iipair_second_rcmp);
+    printf("Leaves: %d\n\n", leaves);
+    printf("freqs (victim_id, attackers, misdisfact):\n");
+    for(const iipair& p: freq2) {
+        double rfreq = double(p.second * victims.size()) / leaves;
+        printf("  %d: %d: %lf\n", p.first, p.second, rfreq);
+    }
 
     /*
     ipvec l = network.edge_list();
@@ -67,5 +75,5 @@ int main() {
         printf("%d %d\n", p.first, p.second);
     }
     */
-    return retval;
+    return 0;
 }
