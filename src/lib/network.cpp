@@ -97,20 +97,21 @@ ipvec Network::edge_list() const {
 int Network::make_new_vertices(int k, int _nid) {
     // insert k new physical nodes in the network whose network id is _nid
     int u = size();
-    nid.resize(u+k, _nid);
-    netsize.resize(u+k, 0);
+    int uend = u+k;
+    nid.resize(uend, _nid);
+    netsize.resize(uend, 0);
     if(_nid >= 0) {
         netsize[_nid] += k;
-        depth.resize(u+k, depth[_nid]);
+        depth.resize(uend, depth[_nid]);
     }
     else {
-        depth.resize(u+k, 0);
+        depth.resize(uend, 0);
     }
 
-    in_nbrs.resize(u+k);
-    side_nbrs.resize(u+k);
-    up_nbrs.resize(u+k);
-    down_nbrs.resize(u+k);
+    in_nbrs.resize(uend);
+    side_nbrs.resize(uend);
+    up_nbrs.resize(uend);
+    down_nbrs.resize(uend);
     return u;
 }
 
