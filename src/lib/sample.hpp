@@ -19,7 +19,12 @@ MAYBE_INLINE double runidist(int a, int b, rng_t& rng) {
 }
 
 MAYBE_INLINE int do_sigma_n(int n, double sigma, rng_t& rng) {
-    return std::max(1, int(n * std::normal_distribution<double>(1.0, sigma)(rng)));
+    if(sigma == 0.0) {
+        return n;
+    }
+    else {
+        return std::max(1, int(n * std::normal_distribution<double>(1.0, sigma)(rng)));
+    }
 }
 
 template<class C>
