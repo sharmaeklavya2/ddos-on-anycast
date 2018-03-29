@@ -43,7 +43,7 @@ void attack(const Network& network, const ivec& victims, ivec& target, int side_
     // TODO: Remove side edge transitivity
 
     int n = network.size();
-    int h = network.height;
+    int h = network.height();
 
     // init targets
     target.resize(n, -1);
@@ -53,13 +53,6 @@ void attack(const Network& network, const ivec& victims, ivec& target, int side_
         target_dist[v] = 0;
     }
 
-    // get nodes depthwise
-    vector<ivec> depthwise_nodes(h+1);
-    for(int i=0; i<n; ++i) {
-        if(network.netsize[i] == 0) {
-            depthwise_nodes[network.depth[i]].push_back(i);
-        }
-    }
     /*
     vector<ivec> depthwise_victims(h+1);
     for(int victim: victims) {
@@ -72,7 +65,7 @@ void attack(const Network& network, const ivec& victims, ivec& target, int side_
     for(int d=h; d>=0; --d) {
         // initialize targets, target_dists and heap
         PQ pq;
-        for(int u: depthwise_nodes[d]) {
+        for(int u: network.depthwise[d]) {
             if(target[u] == -1 && !network.down_nbrs[u].empty()) {
                 ipvec dvlist;
                 dvlist.reserve(network.down_nbrs[u].size());
@@ -103,7 +96,7 @@ void attack(const Network& network, const ivec& victims, ivec& target, int side_
 
     for(int d=1; d<=h; ++d) {
         PQ pq;
-        for(int u: depthwise_nodes[d]) {
+        for(int u: network.depthwise[d]) {
             if(target_dist[u] == -1 && !network.up_nbrs[u].empty()) {
                 vector<itrip> dvlist;
                 for(int v: network.up_nbrs[u]) {

@@ -10,7 +10,6 @@ struct GrowParams {
     double prob_self_multi_upstream;
     double prob_side_peering;
     double prob_self_side_peering;
-    GraphGen* p_explode_graph_gen;
 };
 
 class Network {
@@ -31,17 +30,6 @@ public:
     // netsize[u] is 0 iff u is a physical node
     // Otherwise netsize[u] is the number of nodes in the network belonging to the virtual node u.
     ivec depth;
-    int height;
-    int pivot;  // index of a physical node
-
-    void update_pivot() {
-        for(int i=0; i<int(netsize.size()); ++i) {
-            if(netsize[i] == 0) {
-                pivot = i;
-                break;
-            }
-        }
-    }
 
     nbrs_list_t in_nbrs;
     nbrs_list_t side_nbrs;
@@ -55,6 +43,8 @@ public:
     * down_nbrs: neighbors in the downstream network.
     A virtual node doesn't have in_nbrs and down_nbrs.
     */
+
+    vector<nbrs_t> depthwise;
 
     void init(int n, const ipvec& edges, bool virtual_parent, int side_connectivity);
 
@@ -72,6 +62,10 @@ public:
 
     // properties
 
+    int height() const {
+        return depthwise.size() - 1;
+    }
+
     int degree(int u) const {
         return in_nbrs[u].size() + side_nbrs[u].size() + up_nbrs[u].size() + down_nbrs[u].size();
     }
@@ -82,6 +76,15 @@ public:
     int size() const {
         // returns the number of physical and virtual nodes
         return netsize.size();
+    }
+    void reserve(int n) {
+        nid.reserve(n);
+        netsize.reserve(n);
+        depth.reserve(n);
+        in_nbrs.reserve(n);
+        side_nbrs.reserve(n);
+        up_nbrs.reserve(n);
+        down_nbrs.reserve(n);
     }
 
     int num_vertices() const;
@@ -107,8 +110,12 @@ public:
     int make_new_vertices(int k, int _nid);
     // insert k new physical nodes in the network whose network id is _nid
 
-    void grow(int u, int level, bool fully_expand_last_level, const GrowParams& grow_params, int seed);
+    void expand_node(int u, GraphGen& graph_gen, int seed);
     // replace a physical vertex u by a network
+    void hgrow(GraphGen& graph_gen, int seed);
+    // expand all leaves
+    void vgrow(const GrowParams& grow_params, int seed);
+    // add children to all leaves
 };
 
 ostream& operator<<(ostream&, const Network&);

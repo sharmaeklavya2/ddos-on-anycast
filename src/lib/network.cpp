@@ -5,22 +5,18 @@
 void Network::init(int n, const ipvec& edges, bool virtual_parent, int side_connectivity) {
     // if side_connectivity is positive, that many side_links are made for each edge
     // otherwise in_links are used.
-    height = 0;
     int vparent = -1;
+    depthwise.resize(1);
     if(virtual_parent) {
         vparent = 0;
         make_new_vertices(1, -1);
-        pivot = 1;
+        depthwise[0].push_back(0);
     }
-    pivot = 0;
     int ufirst = vparent + 1;
+    int uend = ufirst + n;
     make_new_vertices(n, vparent);
-
-    if(virtual_parent) {
-        pivot = 1;
-    }
-    else {
-        pivot = 0;
+    for(int i=ufirst; i<uend; ++i) {
+        depthwise[0].push_back(i);
     }
 
     for(const iipair& p: edges) {
@@ -96,6 +92,7 @@ ipvec Network::edge_list() const {
 
 int Network::make_new_vertices(int k, int _nid) {
     // insert k new physical nodes in the network whose network id is _nid
+    // doesn't fill 'depthwise'
     int u = size();
     int uend = u+k;
     nid.resize(uend, _nid);
@@ -141,6 +138,11 @@ void Network::print(FILE* fp, bool print_virtual) const {
             print_icont(fp, down_nbrs[u], ", ", "[", "]\n");
         }
     }
+    fprintf(fp, "depthwise:\n");
+    for(size_t i=0; i<depthwise.size(); ++i) {
+        fprintf(fp, "  %zd: ", i);
+        print_icont(fp, depthwise[i], ", ", "[", "]\n");
+    }
 }
 
 ostream& operator<<(ostream& os, const Network& network) {
@@ -149,11 +151,6 @@ ostream& operator<<(ostream& os, const Network& network) {
 }
 
 bool Network::basic_sanity_check() const {
-    // pivot should be a physical node
-    if(netsize[pivot] > 0) {
-        fprintf(stderr, "%d is pivot but virtual\n", pivot);
-        return false;
-    }
     // sizes of all lists should be the same
     size_t sizes[7] = {nid.size(), depth.size(), netsize.size(),
         in_nbrs.size(), side_nbrs.size(), up_nbrs.size(), down_nbrs.size()};
@@ -162,6 +159,14 @@ bool Network::basic_sanity_check() const {
             fprintf(stderr, "sizes of lists %d and %d differ\n", i, i+1);
             return false;
         }
+    }
+    int s = 0;
+    for(int i=0; i<=height(); ++i) {
+        s += depthwise[i].size();
+    }
+    if(s != size()) {
+        fprintf(stderr, "depthwise node-count sum doesn't equal total node-count\n");
+        return false;
     }
     return true;
 }
@@ -190,9 +195,17 @@ bool Network::long_sanity_check() const {
             height2 = depth[u];
         }
     }
-    if(height2 != height) {
-        fprintf(stderr, "height should be %d instead of %d\n", height2, height);
+    if(height2 != height()) {
+        fprintf(stderr, "height should be %d instead of %d\n", height2, height());
         return false;
+    }
+
+    for(int i=0; i<=height(); ++i) {
+        for(int u: depthwise[i]) {
+            if(depth[u] != i) {
+                fprintf(stderr, "%d is in depthwise[%d] but has depth %d\n", u, i, depth[u]);
+            }
+        }
     }
 
     for(int u=0; u<size(); ++u) {

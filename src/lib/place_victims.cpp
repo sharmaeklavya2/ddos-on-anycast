@@ -1,10 +1,10 @@
 #include "place_victims.hpp"
 
 void place_victims_randomly(const Network& network, int n, ivec& victims, int seed) {
-    victims.reserve(network.size());
-    for(int i=0; i<network.size(); ++i) {
-        if(network.netsize[i] == 0 && network.depth[i] == network.height) {
-            victims.push_back(i);
+    victims.reserve(network.depthwise.back().size());
+    for(int u: network.depthwise.back()) {
+        if(network.netsize[u] == 0) {
+            victims.push_back(u);
         }
     }
     n = std::min<int>(n, victims.size());
