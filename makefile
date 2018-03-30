@@ -22,7 +22,7 @@ LIB_BUILDDIR := $(BUILDDIR)/lib
 CXX := g++ $(FLAGS)
 
 .PHONY: all
-all: $(BUILDDIR)/simulate $(BUILDDIR)/graph_gen;
+all: $(BUILDDIR)/simulate $(BUILDDIR)/graph_gen $(BUILDDIR)/dag;
 
 .PHONY: clean
 clean:
@@ -40,8 +40,9 @@ GRAPH_GEN_HSET := $(LIB_SRCDIR)/graph_gen.hpp $(BASE_HSET)
 NETWORK_HSET := $(LIB_SRCDIR)/network.hpp $(GRAPH_GEN_HSET)
 PLACE_VICTIMS_HSET := $(LIB_SRCDIR)/place_victims.hpp $(NETWORK_HSET)
 ATTACK_HSET := $(LIB_SRCDIR)/attack.hpp $(NETWORK_HSET)
+DAG_HSET := $(LIB_SRCDIR)/dag.hpp $(BASE_HSET)
 
-LIB_OBJS := $(LIB_BUILDDIR)/network.o $(LIB_BUILDDIR)/network_grow.o $(LIB_BUILDDIR)/graph_gen.o $(LIB_BUILDDIR)/attack.o $(LIB_BUILDDIR)/place_victims.o
+LIB_OBJS := $(LIB_BUILDDIR)/network.o $(LIB_BUILDDIR)/network_grow.o $(LIB_BUILDDIR)/graph_gen.o $(LIB_BUILDDIR)/attack.o $(LIB_BUILDDIR)/place_victims.o $(LIB_BUILDDIR)/dag.o
 
 $(LIB_BUILDDIR)/network.o: $(LIB_SRCDIR)/network.cpp $(GRAPH_GEN_HSET) $(NETWORK_HSET) $(UTIL_HSET)
 	@mkdir -p $(LIB_BUILDDIR)
@@ -63,6 +64,10 @@ $(LIB_BUILDDIR)/attack.o: $(LIB_SRCDIR)/attack.cpp $(ATTACK_HSET)
 	@mkdir -p $(LIB_BUILDDIR)
 	$(CXX) -c $< -o $@
 
+$(LIB_BUILDDIR)/dag.o: $(LIB_SRCDIR)/dag.cpp $(DAG_HSET) $(UTIL_HSET)
+	@mkdir -p $(LIB_BUILDDIR)
+	$(CXX) -c $< -o $@
+
 # Executable files
 
 $(BUILDDIR)/simulate.o: src/simulate.cpp $(GRAPH_GEN_HSET) $(NETWORK_HSET)
@@ -73,8 +78,15 @@ $(BUILDDIR)/graph_gen.o: src/graph_gen.cpp $(GRAPH_GEN_HSET)
 	@mkdir -p $(BUILDDIR)
 	$(CXX) -c $< -o $@
 
+$(BUILDDIR)/dag.o: src/dag.cpp $(DAG_HSET)
+	@mkdir -p $(BUILDDIR)
+	$(CXX) -c $< -o $@
+
 $(BUILDDIR)/simulate: $(LIB_OBJS) $(BUILDDIR)/simulate.o
 	$(CXX) $^ -o $@
 
 $(BUILDDIR)/graph_gen: $(LIB_OBJS) $(BUILDDIR)/graph_gen.o
+	$(CXX) $^ -o $@
+
+$(BUILDDIR)/dag: $(LIB_BUILDDIR)/dag.o $(BUILDDIR)/dag.o
 	$(CXX) $^ -o $@
