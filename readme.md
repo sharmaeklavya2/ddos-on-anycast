@@ -20,9 +20,21 @@ This simulator was created as part of the study
     Here closeness is measured as hop distance under intra and inter network policy constraints
     suggested in the paper above.
 
-4.  Randomly place attack nodes and calculate attack traffic reaching each victim.
+4.  Calculate the relative sizes of catchment areas.
+    For a large network and small (but not too small) number of attacking nodes,
+    the fraction of total attack traffic reaching a particular victim
+    is roughty equal to the relative catchment area size.
 
 ### How to run
 
+To compile the project, run
+
     DEBUG=1 make all
-    echo 5 | build/debug/network
+
+To find out about the command-line arguments run
+
+    build/debug/simulate
+
+To run with default values of command-line arguments, run
+
+    build/debug/simulate -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
