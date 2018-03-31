@@ -23,14 +23,14 @@ const char usage_fmt[] = "usage: %s"
 " prob_multi_upstream prob_self_multi_upstream"
 " prob_side_peering prob_self_side_peering"
 " top_level_side_connectivity"
-" n_layers n_victims seed"
+" n_layers n_victims strategic_placement seed"
 "\n";
 
 using std::atoi;
 using std::atof;
 
 int main(int argc, char* argv[]) {
-    if(argc != 15) {
+    if(argc != 16) {
         fprintf(stderr, usage_fmt, argv[0]);
         return 2;
     }
@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
     int top_level_side_connectivity = neg_coalesce(atoi(argv[argi++]), 2);
     int n_layers = nonpos_coalesce(atoi(argv[argi++]), 2);
     int n_victims = nonpos_coalesce(atoi(argv[argi++]), 10);
+    int strategic_placement = neg_coalesce(atoi(argv[argi++]), 1);
     int seed = nonpos_coalesce(atoi(argv[argi++]), int(time(NULL)));
 
     CompleteGraphGen complete_gen(top_level_n);
@@ -89,7 +90,12 @@ int main(int argc, char* argv[]) {
     }
 
     ivec victims, targets;
-    place_victims_randomly(network, n_victims, victims, seed);
+    if(strategic_placement) {
+        place_victims_using_toposort(network, n_victims, victims, seed, 0.01);
+    }
+    else {
+        place_victims_randomly(network, n_victims, victims, seed);
+    }
     attack(network, victims, targets, 100);
 
     std::map<int, int> freq;
