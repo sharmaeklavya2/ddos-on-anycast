@@ -23,14 +23,14 @@ const char usage_fmt[] = "usage: %s"
 " prob_multi_upstream prob_self_multi_upstream"
 " prob_side_peering prob_self_side_peering"
 " top_level_side_connectivity"
-" n_layers n_victims strategic_placement seed"
+" n_layers n_victims strategic_placement repeat seed"
 "\n";
 
 using std::atoi;
 using std::atof;
 
 int main(int argc, char* argv[]) {
-    if(argc != 16) {
+    if(argc != 17) {
         fprintf(stderr, usage_fmt, argv[0]);
         return 2;
     }
@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
     int n_layers = nonpos_coalesce(atoi(argv[argi++]), 2);
     int n_victims = nonpos_coalesce(atoi(argv[argi++]), 10);
     int strategic_placement = neg_coalesce(atoi(argv[argi++]), 1);
+    int repeat = nonpos_coalesce(atoi(argv[argi++]), 1);
     int seed = nonpos_coalesce(atoi(argv[argi++]), int(time(NULL)));
 
     CompleteGraphGen complete_gen(top_level_n);
@@ -60,66 +61,75 @@ int main(int argc, char* argv[]) {
 
     rng_t rng(seed);
 
-    Network network(complete_gen, rng(), false, top_level_side_connectivity);
-    if(!network.long_sanity_check()) {
-        puts("Network has inconsistencies!");
-        return 1;
-    }
+    double maxrfreq=0, sumrfreq=0;
 
-    network.hgrow(explode_graph_gen, rng());
-    for(int i=1; i<n_layers; ++i) {
-        network.vgrow(grow_params, rng());
+    for(int repi=0; repi < repeat; ++repi) {
+        Network network(complete_gen, rng(), false, top_level_side_connectivity);
+        if(!network.long_sanity_check()) {
+            puts("Network has inconsistencies!");
+            return 1;
+        }
+
         network.hgrow(explode_graph_gen, rng());
-    }
 
-    printf("Vertices: %d\n", network.num_vertices());
-    printf("Edges: %d\n", network.num_edges());
-    int leaves = 0;
-    for(int u: network.depthwise.back()) {
-        if(!network.is_virtual(u)) {
-            leaves++;
+        for(int i=1; i<n_layers; ++i) {
+            network.vgrow(grow_params, rng());
+            network.hgrow(explode_graph_gen, rng());
         }
-    }
-    printf("Leaves: %d\n", leaves);
-    printf("\n");
 
-    if(!network.long_sanity_check()) {
-        puts("Network has inconsistencies!");
-        network.print(stdout, false);
-        return 1;
-    }
-
-    ivec victims, targets;
-    if(strategic_placement) {
-        place_victims_using_toposort(network, n_victims, victims, seed, 0.01);
-    }
-    else {
-        place_victims_randomly(network, n_victims, victims, seed);
-    }
-    attack(network, victims, targets, 100);
-
-    std::map<int, int> freq;
-    for(int v: victims) {
-        freq[v] = 0;
-    }
-    for(int u: network.depthwise.back()) {
-        if(network.netsize[u] == 0) {
-            freq[targets[u]]++;
+        int leaves = 0;
+        for(int u: network.depthwise.back()) {
+            if(!network.is_virtual(u)) {
+                leaves++;
+            }
         }
-    }
-    vector<iipair> freq2(freq.begin(), freq.end());
-    std::sort(freq2.begin(), freq2.end(), iipair_second_rcmp);
-    printf("freqs (victim_id, attackers, misdisfact):\n");
-    for(const iipair& p: freq2) {
-        double rfreq = double(p.second * victims.size()) / leaves;
-        printf("  %d: %d: %lf\n", p.first, p.second, rfreq);
+        if(repeat == 1) {
+            printf("Vertices: %d\n", network.num_vertices());
+            printf("Edges: %d\n", network.num_edges());
+            printf("Leaves: %d\n", leaves);
+            printf("\n");
+        }
+
+        if(!network.long_sanity_check()) {
+            puts("Network has inconsistencies!");
+            network.print(stdout, false);
+            return 1;
+        }
+
+        ivec victims, targets;
+        if(strategic_placement) {
+            place_victims_using_toposort(network, n_victims, victims, seed, 0.01);
+        }
+        else {
+            place_victims_randomly(network, n_victims, victims, seed);
+        }
+        attack(network, victims, targets, 100);
+
+        std::map<int, int> freq;
+        for(int v: victims) {
+            freq[v] = 0;
+        }
+        for(int u: network.depthwise.back()) {
+            if(network.netsize[u] == 0) {
+                freq[targets[u]]++;
+            }
+        }
+        vector<iipair> freq2(freq.begin(), freq.end());
+        std::sort(freq2.begin(), freq2.end(), iipair_second_rcmp);
+        double rfreq = double(freq2[0].second * victims.size()) / leaves;
+        if(repeat == 1) {
+            printf("freqs (victim_id, attackers, misdisfact):\n");
+            for(const iipair& p: freq2) {
+                double rfreq = double(p.second * victims.size()) / leaves;
+                printf("  %d: %d: %lf\n", p.first, p.second, rfreq);
+            }
+        }
+        maxrfreq = std::max(maxrfreq, rfreq);
+        sumrfreq += rfreq;
     }
 
-    /*
-    ipvec l = network.edge_list();
-    for(const iipair& p: l) {
-        printf("%d %d\n", p.first, p.second);
+    if(repeat > 1) {
+        printf("max: %lf, avg: %lf\n", maxrfreq, sumrfreq/repeat);
     }
-    */
     return 0;
 }
