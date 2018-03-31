@@ -4,7 +4,7 @@
 #include "sample.hpp"
 
 void Network::expand_node(int u, GraphGen& graph_gen, int seed) {
-    if(netsize[u] == 0) {
+    if(is_virtual(u) > 0) {
         fprintf(stderr, "Attempt to expand a virtual node\n");
         return;
     }
@@ -60,7 +60,7 @@ void Network::hgrow(GraphGen& graph_gen, int seed) {
     rng_t rng(seed);
     ivec leaves(depthwise.back().begin(), depthwise.back().end());
     for(int u: leaves) {
-        if(netsize[u] > 0) {
+        if(!is_virtual(u)) {
             expand_node(u, graph_gen, rng());
         }
     }
@@ -68,35 +68,37 @@ void Network::hgrow(GraphGen& graph_gen, int seed) {
 
 void Network::vgrow(const GrowParams& grow_params, int seed) {
 
-    int n_leaves = depthwise.back().size();
+    int n_leaves_rough = depthwise.back().size();
     depthwise.emplace_back();
-    int expected_children = grow_params.num_children * n_leaves;
+    int expected_children = grow_params.num_children * n_leaves_rough;
     depthwise.back().reserve(expected_children);
     reserve(size() + expected_children);
     rng_t rng1(seed);
 
     rng_t rng2(rng1());
     for(int u: depthwise[depthwise.size()-2]) {
-        rng_t rng3(rng2());
-        int n = do_sigma_n(grow_params.num_children, grow_params.num_children_sigma, rng3);
-        int vfirst = make_new_vertices(n, nid[u]);
-        int vend = vfirst + n;
-        for(int v=vfirst; v<vend; ++v) {
-            depth[v] = depth[u]+1;
-            depthwise.back().push_back(v);
-            add_upward_edge(v, u);
-            // optionally add extra upstreams
-            rng_t rng4(rng3());
-            while(runidist(0, 1, rng4) < grow_params.prob_multi_upstream) {
-                int u2;
-                if(in_nbrs[u].size() + side_nbrs[u].size() == 0 ||
-                    runidist(0, 1, rng4) < grow_params.prob_self_multi_upstream) {
-                    u2 = u;
+        if(!is_virtual(u)) {
+            rng_t rng3(rng2());
+            int n = do_sigma_n(grow_params.num_children, grow_params.num_children_sigma, rng3);
+            int vfirst = make_new_vertices(n, nid[u]);
+            int vend = vfirst + n;
+            for(int v=vfirst; v<vend; ++v) {
+                depth[v] = depth[u]+1;
+                depthwise.back().push_back(v);
+                add_upward_edge(v, u);
+                // optionally add extra upstreams
+                rng_t rng4(rng3());
+                while(runidist(0, 1, rng4) < grow_params.prob_multi_upstream) {
+                    int u2;
+                    if(in_nbrs[u].size() + side_nbrs[u].size() == 0 ||
+                        runidist(0, 1, rng4) < grow_params.prob_self_multi_upstream) {
+                        u2 = u;
+                    }
+                    else {
+                        u2 = sample(in_nbrs[u], side_nbrs[u], rng4);
+                    }
+                    add_upward_edge(v, u2);
                 }
-                else {
-                    u2 = sample(in_nbrs[u], side_nbrs[u], rng4);
-                }
-                add_upward_edge(v, u2);
             }
         }
     }

@@ -73,7 +73,12 @@ int main(int argc, char* argv[]) {
 
     printf("Vertices: %d\n", network.num_vertices());
     printf("Edges: %d\n", network.num_edges());
-    int leaves = network.depthwise.back().size();
+    int leaves = 0;
+    for(int u: network.depthwise.back()) {
+        if(!network.is_virtual(u)) {
+            leaves++;
+        }
+    }
     printf("Leaves: %d\n", leaves);
     printf("\n");
 
