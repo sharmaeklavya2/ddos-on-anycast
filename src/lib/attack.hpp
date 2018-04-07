@@ -3,6 +3,6 @@
 
 #include "network.hpp"
 
-void attack(const Network& network, const ivec& victims, ivec& target, int side_weight);
+void attack(const Network& network, const ivec& victims, ivec& target, int in_weight, int side_weight);
 
 #endif  // ATTACK_HPP

@@ -7,7 +7,30 @@ using std::tuple;
 typedef std::tuple<int, int> PQElem;
 typedef std::priority_queue<PQElem, vector<PQElem>, std::greater<PQElem> > PQ;
 
-void dijkstra(const Network& network, PQ& pq, ivec& target, ivec& target_dist, vector<bool>& visited, int side_weight) {
+void normalize_edge_weights(int& in_weight, int& side_weight) {
+    if(in_weight < 0) {
+        fprintf(stderr, "in_weight = %d\n", in_weight);
+    }
+    if(side_weight < 0) {
+        fprintf(stderr, "side_weight = %d\n", side_weight);
+    }
+    if(in_weight == 0) {
+        if(side_weight == 0) {
+            in_weight = side_weight = 1;
+        }
+        else {
+            in_weight = 1;
+            side_weight = -1;
+        }
+    }
+    else if(side_weight == 0) {
+        side_weight = 1;
+        in_weight = -1;
+    }
+}
+
+void dijkstra(const Network& network, PQ& pq, ivec& target, ivec& target_dist, vector<bool>& visited, int in_weight, int side_weight) {
+
     while(!pq.empty()) {
         int u, du;
         std::tie(du, u) = pq.top();
@@ -21,11 +44,15 @@ void dijkstra(const Network& network, PQ& pq, ivec& target, ivec& target_dist, v
         }
         ipvec l;
         l.reserve(network.in_nbrs[u].size() + network.side_nbrs[u].size());
-        for(int v: network.in_nbrs[u]) {
-            l.emplace_back(v, 1);
+        if(in_weight != -1) {
+            for(int v: network.in_nbrs[u]) {
+                l.emplace_back(v, in_weight);
+            }
         }
-        for(int v: network.side_nbrs[u]) {
-            l.emplace_back(v, side_weight);
+        if(side_weight != -1) {
+            for(int v: network.side_nbrs[u]) {
+                l.emplace_back(v, side_weight);
+            }
         }
         for(const iipair& p: l) {
             int v = p.first, w = p.second;
@@ -39,9 +66,10 @@ void dijkstra(const Network& network, PQ& pq, ivec& target, ivec& target_dist, v
     }
 }
 
-void attack(const Network& network, const ivec& victims, ivec& target, int side_weight) {
+void attack(const Network& network, const ivec& victims, ivec& target, int in_weight, int side_weight) {
     // TODO: Remove side edge transitivity
 
+    normalize_edge_weights(in_weight, side_weight);
     int n = network.size();
     int h = network.height();
 
@@ -88,7 +116,7 @@ void attack(const Network& network, const ivec& victims, ivec& target, int side_
             }
         }
 
-        dijkstra(network, pq, target, target_dist, visited, side_weight);
+        dijkstra(network, pq, target, target_dist, visited, in_weight, side_weight);
     }
 
     typedef tuple<int, int, int> itrip;
@@ -114,7 +142,7 @@ void attack(const Network& network, const ivec& victims, ivec& target, int side_
             }
         }
 
-        dijkstra(network, pq, target, target_dist, visited, side_weight);
+        dijkstra(network, pq, target, target_dist, visited, in_weight, side_weight);
     }
     // cerr << "target_dist: " << target_dist << endl;
 

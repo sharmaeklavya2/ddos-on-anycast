@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
         else {
             place_victims_randomly(network, n_victims, victims, seed);
         }
-        attack(network, victims, targets, 100);
+        attack(network, victims, targets, 1, 100);
 
         std::map<int, int> freq;
         for(int v: victims) {
