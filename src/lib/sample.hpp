@@ -54,13 +54,13 @@ inline int weighed_sample(const ivec& v, const ivec& weights, rng_t& rng) {
     if(weights.size() != v.size()) {
         fprintf(stderr, "weighed_sample: container and weights have different sizes\n");
     }
+    if(weights.empty()) {
+        fprintf(stderr, "weighed_sample: nothing_to_sample\n");
+    }
     ivec cum_weights(1, 0);
     cum_weights.reserve(v.size()+1);
     for(auto weight: weights) {
         cum_weights.push_back(weight + cum_weights.back());
-    }
-    if(cum_weights.empty() || cum_weights.back() == 0) {
-        fprintf(stderr, "weighed_sample: nothing_to_sample\n");
     }
 
     int i = iunidist(0, cum_weights.back() - 1, rng);

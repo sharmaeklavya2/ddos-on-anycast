@@ -112,10 +112,18 @@ void Network::vgrow(const GrowParams& grow_params, int seed) {
             items.reserve(up_nbrs[v].size());
             weights.reserve(up_nbrs[v].size());
             for(int u: up_nbrs[v]) {
-                items.push_back(u);
-                weights.push_back(down_nbrs[u].size()-1);
+                if(down_nbrs[u].size() > 1) {
+                    items.push_back(u);
+                    weights.push_back(down_nbrs[u].size()-1);
+                }
             }
-            int u = weighed_sample(items, weights, rng3);
+            int u;
+            if(weights.empty()) {
+                u = sample(up_nbrs[v], rng3);
+            }
+            else {
+                u = weighed_sample(items, weights, rng3);
+            }
             int u2 = u;
             if(runidist(0, 1, rng3) > grow_params.prob_self_side_peering) {
                 u2 = sample(in_nbrs[u], side_nbrs[u], rng3);
