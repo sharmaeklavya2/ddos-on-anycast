@@ -35,12 +35,7 @@ void make_network_dag(const Network& network, Graph& graph2) {
     graph2.swap(graph);
 }
 
-void distribute(vector<double>& weights, int x, ivec& xvec, double max_noise, rng_t& rng) {
-    int n = weights.size();
-    if(n == 1) {
-        xvec.push_back(x);
-        return;
-    }
+void noisy_normalize(vector<double>& weights, int x, double max_noise, rng_t& rng) {
     std::uniform_real_distribution<double> noise_dist(-max_noise, max_noise);
     double weight_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
     for(double& w: weights) {
@@ -50,6 +45,14 @@ void distribute(vector<double>& weights, int x, ivec& xvec, double max_noise, rn
     for(double& w: weights) {
         w = (w * x) / weight_sum;
     }
+}
+
+void distribute(vector<double>& weights, int x, ivec& xvec, rng_t& rng) {
+    int n = weights.size();
+    if(n == 1) {
+        xvec.push_back(x);
+        return;
+    }
 
     typedef pair<double, int> dipair;
     vector<dipair> wvec;
@@ -57,7 +60,7 @@ void distribute(vector<double>& weights, int x, ivec& xvec, double max_noise, rn
     for(int i=0; i<n; ++i) {
         wvec.emplace_back(weights[i], i);
     }
-    std::sort(wvec.begin(), wvec.end());
+    std::shuffle(wvec.begin(), wvec.end(), rng);
 
     vector<iipair> xvec2;
     xvec2.reserve(n);
@@ -110,7 +113,8 @@ void place_victims_using_toposort(const Network& network, int n_victims, ivec& v
     for(int u: sources) {
         weights.push_back(score[u]);
     }
-    distribute(weights, n_victims, xvec, max_noise, rng);
+    noisy_normalize(weights, n_victims, max_noise, rng);
+    distribute(weights, n_victims, xvec, rng);
     int s = sources.size();
     for(int i=0; i<s; ++i) {
         int u = sources[i];
@@ -130,7 +134,8 @@ void place_victims_using_toposort(const Network& network, int n_victims, ivec& v
                 for(int v: succs) {
                     weights.push_back(score[v] / graph.preds(v).size());
                 }
-                distribute(weights, victims[u], xvec, max_noise, rng);
+                noisy_normalize(weights, victims[u], max_noise, rng);
+                distribute(weights, victims[u], xvec, rng);
                 for(int i=0; i<s; ++i) {
                     int v = succs[i];
                     victims[v] += xvec[i];
