@@ -2,11 +2,17 @@
 
 int main() {
     int n, m;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
     scanf("%d%d", &n, &m);
+#pragma GCC diagnostic pop
     Graph graph(n);
     for(int i=0; i<m; ++i) {
         int u, v;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
         scanf("%d%d", &u, &v);
+#pragma GCC diagnostic pop
         graph.add_edge(u, v);
     }
     ivec topolist;
