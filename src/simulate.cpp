@@ -29,6 +29,24 @@ const char usage_fmt[] = "usage: %s"
 using std::atoi;
 using std::atof;
 
+void print_stats(const char* name, vector<double>& xs) {
+    std::sort(xs.begin(), xs.end());
+    double xsum = 0;
+    double xsum2 = 0;
+    for(double x: xs) {
+        xsum += x;
+        xsum2 += x * x;
+    }
+    int n = xs.size();
+    double mean = xsum / n;
+    double variance = (xsum2 - xsum*xsum/n)/(n-1);
+    double q3 = xs[(3*n)/4];
+    double q1 = xs[n/4];
+
+    printf("%s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, variance: %lf, iqd: %lf\n",
+        name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], variance, q3 - q1);
+}
+
 int main(int argc, char* argv[]) {
     if(argc != 17) {
         fprintf(stderr, usage_fmt, argv[0]);
@@ -61,7 +79,7 @@ int main(int argc, char* argv[]) {
 
     rng_t rng(seed);
 
-    double maxrfreq=0, sumrfreq=0;
+    vector<double> relcatches(repeat, 0.0), misdisfacts(repeat, 0.0);
 
     for(int repi=0; repi < repeat; ++repi) {
         Network network(complete_gen, rng(), false, top_level_side_connectivity);
@@ -116,20 +134,23 @@ int main(int argc, char* argv[]) {
         }
         vector<iipair> freq2(freq.begin(), freq.end());
         std::sort(freq2.begin(), freq2.end(), iipair_second_rcmp);
-        double rfreq = double(freq2[0].second * victims.size()) / leaves;
+        double relcatch = double(freq2[0].second) / leaves;
+        double misdisfact = double(freq2[0].second * victims.size()) / leaves;
         if(repeat == 1) {
-            printf("freqs (victim_id, attackers, misdisfact):\n");
+            printf("freqs (victim_id, attackers, relcatch, misdisfact):\n");
             for(const iipair& p: freq2) {
-                double rfreq = double(p.second * victims.size()) / leaves;
-                printf("  %d: %d: %lf\n", p.first, p.second, rfreq);
+                double relcatch = double(p.second) / leaves;
+                double misdisfact = double(lli(p.second) * victims.size()) / leaves;
+                printf("  %5d: %4d: %lf: %lf\n", p.first, p.second, relcatch, misdisfact);
             }
         }
-        maxrfreq = std::max(maxrfreq, rfreq);
-        sumrfreq += rfreq;
+        relcatches[repi] = relcatch;
+        misdisfacts[repi] = misdisfact;
     }
 
     if(repeat > 1) {
-        printf("max: %lf, avg: %lf\n", maxrfreq, sumrfreq/repeat);
+        print_stats("relcatches", relcatches);
+        print_stats("misdisfacts", misdisfacts);
     }
     return 0;
 }
