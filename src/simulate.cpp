@@ -141,6 +141,8 @@ double get_arg_f(const char* name) {
     }
 }
 
+const int MAX_VICTIMS_TO_DISPLAY = 100;
+
 int main(int argc, char* argv[]) {
 
     if(argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
@@ -215,7 +217,6 @@ int main(int argc, char* argv[]) {
             printf("Vertices: %d\n", network.num_vertices());
             printf("Edges: %d\n", network.num_edges());
             printf("Leaves: %d\n", leaves);
-            printf("\n");
         }
 
         if(!network.long_sanity_check()) {
@@ -230,6 +231,9 @@ int main(int argc, char* argv[]) {
         }
         else {
             place_victims_randomly(network, n_victims, victims, seed);
+        }
+        if(reps == 1) {
+            printf("victims: %d\n\n", int(victims.size()));
         }
         attack(network, victims, targets, 1, 100);
 
@@ -247,11 +251,17 @@ int main(int argc, char* argv[]) {
         double relcatch = double(freq2[0].second) / leaves;
         double misdisfact = double(freq2[0].second * victims.size()) / leaves;
         if(reps == 1) {
-            printf("freqs (victim_id, attackers, relcatch, misdisfact):\n");
-            for(const iipair& p: freq2) {
-                double relcatch = double(p.second) / leaves;
-                double misdisfact = double(lli(p.second) * victims.size()) / leaves;
-                printf("  %5d: %4d: %lf: %lf\n", p.first, p.second, relcatch, misdisfact);
+            if(victims.size() <= MAX_VICTIMS_TO_DISPLAY) {
+                printf("freqs (victim_id, attackers, relcatch, misdisfact):\n");
+                for(const iipair& p: freq2) {
+                    double relcatch = double(p.second) / leaves;
+                    double misdisfact = double(lli(p.second) * victims.size()) / leaves;
+                    printf("  %5d: %4d: %lf: %lf\n", p.first, p.second, relcatch, misdisfact);
+                }
+            }
+            else {
+                printf("victim_id=%d, attackers=%d, relcatch=%lf, misdisfact=%lf\n",
+                    freq2[0].first, freq2[0].second, relcatch, misdisfact);
             }
         }
         relcatches[repi] = relcatch;
