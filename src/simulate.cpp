@@ -5,6 +5,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <cmath>
 
 using std::atoi;
 using std::atof;
@@ -94,11 +95,12 @@ void print_stats(const char* name, vector<double>& xs) {
     int n = xs.size();
     double mean = xsum / n;
     double variance = (xsum2 - xsum*xsum/n)/(n-1);
+    double stddev = std::sqrt(variance);
     double q3 = xs[(3*n)/4];
     double q1 = xs[n/4];
 
-    printf("%s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, variance: %lf, iqd: %lf\n",
-        name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], variance, q3 - q1);
+    printf("%s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, stddev: %lf, iqd: %lf\n",
+        name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], stddev, q3 - q1);
 }
 
 static void print_usage(FILE* fp, const char* argv0) {
