@@ -1,6 +1,9 @@
 #include "place_victims.hpp"
 #include "dag.hpp"
 #include "sample.hpp"
+#include "util.hpp"
+#include <map>
+#include <queue>
 
 void place_victims_randomly(const Network& network, int n, ivec& victims, int seed) {
     victims.reserve(network.depthwise.back().size());
@@ -79,7 +82,35 @@ void distribute(vector<double>& weights, int x, ivec& xvec, rng_t& rng) {
     }
 }
 
-void place_victims_using_toposort(const Network& network, int n_victims, ivec& victim_list, int seed, double max_noise) {
+using std::tuple;
+typedef std::tuple<int, int> PQElem;
+typedef std::priority_queue<PQElem, vector<PQElem>, std::greater<PQElem> > PQ;
+
+void dijkstra(const vector<ivec>& adj, PQ& pq, ivec& target, ivec& target_dist, vector<bool>& visited) {
+    while(!pq.empty()) {
+        int u, du;
+        std::tie(du, u) = pq.top();
+        pq.pop();
+        if(visited[u]) {
+            continue;
+        }
+        visited[u] = true;
+
+        if(du != target_dist[u]) {
+            fprintf(stderr, "u=%d, du=%d, target_dist[%d]=%d\n", u, du, u, target_dist[u]);
+        }
+        for(int v: adj[u]) {
+            int dv = target_dist[v];
+            if(dv == -1 || iipair(du+1, target[u]) < iipair(dv, target[v])) {
+                target_dist[v] = du+1;
+                target[v] = target[u];
+                pq.emplace(du+1, v);
+            }
+        }
+    }
+}
+
+void place_victims_using_toposort(const Network& network, int n_victims, ivec& victim_list, int seed, int tries, double max_noise) {
     int n = network.size();
     Graph graph(0);
     make_network_dag(network, graph);
@@ -108,7 +139,7 @@ void place_victims_using_toposort(const Network& network, int n_victims, ivec& v
 
     // divide victims among sources
     vector<double> weights;
-    ivec xvec;
+    ivec xvec, best_xvec;
     weights.reserve(sources.size());
     for(int u: sources) {
         weights.push_back(score[u]);
@@ -124,6 +155,7 @@ void place_victims_using_toposort(const Network& network, int n_victims, ivec& v
     xvec.clear();
 
     // divide victims
+    int dijkstra_calls = 0;
     std::reverse(rtopolist.begin(), rtopolist.end());
     for(int u: rtopolist) {
         if(victims[u] > 0) {
@@ -135,17 +167,84 @@ void place_victims_using_toposort(const Network& network, int n_victims, ivec& v
                     weights.push_back(score[v] / graph.preds(v).size());
                 }
                 noisy_normalize(weights, victims[u], max_noise, rng);
-                distribute(weights, victims[u], xvec, rng);
+                if(!network.is_virtual(u) || victims[u] == 1 || tries == 1) {
+                    distribute(weights, victims[u], best_xvec, rng);
+                }
+                else {
+                    double minmaxload = 1e50;
+                    for(int i=0; i<tries; ++i) {
+                        distribute(weights, victims[u], xvec, rng);
+                        bool found_zero=false, found_one=false;
+                        for(int x: xvec) {
+                            if(x == 0) {found_zero = true;}
+                            else if(x == 1) {found_one = true;}
+                        }
+                        bool best = !(found_one && found_zero);
+                        if(!best) {
+                            std::map<int, int> local_id;
+                            for(int i=0; i<s; ++i) {
+                                local_id[succs[i]] = i;
+                            }
+                            // cerr << "local_id" << local_id << endl;
+                            vector<ivec> adj(s);
+                            PQ pq;
+                            ivec target(s, -1), target_dist(s, -1);
+                            vector<bool> visited(s, false);
+                            for(int i=0; i<s; ++i) {
+                                int v = succs[i];
+                                adj[i].reserve(network.in_nbrs[v].size());
+                                for(int v2: network.in_nbrs[v]) {
+                                    adj[i].push_back(local_id[v2]);
+                                }
+                                if(xvec[i] > 0) {
+                                    pq.emplace(0, i);
+                                    target[i] = i;
+                                    target_dist[i] = 0;
+                                }
+                            }
+                            dijkstra(adj, pq, target, target_dist, visited);
+                            dijkstra_calls++;
+                            vector<double> load(s, 0.0);
+                            for(int i=0; i<s; ++i) {
+                                load[target[i]] += weights[i];
+                            }
+                            double maxload = 0;
+                            for(int i=0; i<s; ++i) {
+                                if(xvec[i] > 0) {
+                                    load[i] /= xvec[i];
+                                    maxload = std::max(maxload, load[i]);
+                                }
+                                else if(load[i] != 0.0) {
+                                    fprintf(stderr, "xvec[%d] = 0 but load[%d] = %lf\n", i, i, load[i]);
+                                }
+                            }
+                            /*
+                            print_icont(stderr, xvec, ", ", "xvec: [", "]\n");
+                            cerr << "target: " << target << endl;
+                            fprintf(stderr, "maxload: %lf\n", maxload);
+                            */
+                            if(maxload < minmaxload) {
+                                best = true;
+                                minmaxload = maxload;
+                            }
+                        }
+                        if(best) {
+                            std::swap(xvec, best_xvec);
+                        }
+                        xvec.clear();
+                    }
+                }
                 for(int i=0; i<s; ++i) {
                     int v = succs[i];
-                    victims[v] += xvec[i];
+                    victims[v] += best_xvec[i];
                 }
                 weights.clear();
-                xvec.clear();
+                best_xvec.clear();
             }
         }
     }
 
+    // fprintf(stderr, "dijkstra was called %d times\n", dijkstra_calls);
     victim_list.reserve(n_victims);
     for(int u: network.depthwise.back()) {
         if(victims[u] > 0 && !network.is_virtual(u)) {
