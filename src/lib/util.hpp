@@ -2,6 +2,7 @@
 #define UTIL_HPP
 
 #include "base.hpp"
+#include <cstring>
 
 // Utility functions
 
@@ -40,6 +41,14 @@ void print_icont(FILE* fp, const C& c, const char* sep, const char* begs, const 
         }
     }
     fprintf(fp, "%s", ends);
+}
+
+static inline void fill_ivec_from_str(char* s, ivec& c, const char* sep) {
+    char* tok = std::strtok(s, sep);
+    while(tok) {
+        c.push_back(std::atoi(tok));
+        tok = std::strtok(nullptr, sep);
+    }
 }
 
 #endif  // UTIL_HPP
