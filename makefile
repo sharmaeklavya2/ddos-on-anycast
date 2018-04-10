@@ -36,6 +36,7 @@ clean:
 BASE_HSET := $(LIB_SRCDIR)/base.hpp
 UTIL_HSET := $(LIB_SRCDIR)/util.hpp $(BASE_HSET)
 SAMPLE_HSET := $(LIB_SRCDIR)/sample.hpp $(BASE_HSET)
+DSU_HSET := $(LIB_SRCDIR)/dsu.hpp $(BASE_HSET)
 GRAPH_GEN_HSET := $(LIB_SRCDIR)/graph_gen.hpp $(BASE_HSET)
 NETWORK_HSET := $(LIB_SRCDIR)/network.hpp $(GRAPH_GEN_HSET)
 PLACE_VICTIMS_HSET := $(LIB_SRCDIR)/place_victims.hpp $(NETWORK_HSET)
@@ -53,7 +54,7 @@ $(LIB_BUILDDIR)/network_grow.o: $(LIB_SRCDIR)/network_grow.cpp $(UTIL_HSET) $(SA
 	@mkdir -p $(LIB_BUILDDIR)
 	$(CXX) -c $< -o $@
 
-$(LIB_BUILDDIR)/graph_gen.o: $(LIB_SRCDIR)/graph_gen.cpp $(GRAPH_GEN_HSET) $(SAMPLE_HSET)
+$(LIB_BUILDDIR)/graph_gen.o: $(LIB_SRCDIR)/graph_gen.cpp $(GRAPH_GEN_HSET) $(SAMPLE_HSET) $(DSU_HSET)
 	@mkdir -p $(LIB_BUILDDIR)
 	$(CXX) -c $< -o $@
 
