@@ -9,6 +9,7 @@ a.out
 secret/
 output/
 var/
+gmon.out
 
 *~
 *.sw[po]

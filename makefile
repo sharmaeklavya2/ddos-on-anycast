@@ -28,6 +28,7 @@ all: $(BUILDDIR)/simulate $(BUILDDIR)/graph_gen $(BUILDDIR)/dag $(BUILDDIR)/segt
 clean:
 	rm -rf var $(MASTER_BUILDDIR)
 	rm -f $(MAIN_OUTPUT)
+	rm -f gmon.out
 	find -name "*.pyc" -type f -delete
 	find -name "__pycache__" -type d -delete
 
