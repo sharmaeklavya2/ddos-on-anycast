@@ -31,8 +31,6 @@ void make_random_connected_graph(int n, int approx_m, ipvec& l, int seed) {
 
     rng_t rng(seed);
 
-    int orig_approx_m = approx_m;
-
     int max_edges = n * (n-1) / 2;
     if(approx_m >= max_edges) {
         for(int i=0; i<n; ++i) {
@@ -64,7 +62,9 @@ void make_random_connected_graph(int n, int approx_m, ipvec& l, int seed) {
     // create MST
     DisjointSets ds(n);
     int n_components = n;
-    std::list<pair<double, iipair> > all_edges2;
+    ipvec edges2; vector<double> weights2;
+    edges2.reserve(all_edges.size());
+    weights2.reserve(all_edges.size());
     double weight_sum = 0;
     // all_edges2.reserve(all_edges.size());
     for(const diitrip& t: all_edges) {
@@ -74,44 +74,20 @@ void make_random_connected_graph(int n, int approx_m, ipvec& l, int seed) {
         if(i2 == j2) {
             double weight = std::exp(-norm/2);
             weight_sum += weight;
-            all_edges2.emplace_back(weight, iipair(i, j));
+            edges2.emplace_back(i, j);
+            weights2.push_back(weight);
         }
         else {
             n_components--;
             ds.unite(i, j);
-            l.push_back(iipair(i, j));
+            l.emplace_back(i, j);
         }
     }
     approx_m -= n-1;
 
-    // cerr << "all_edges: " << all_edges << endl;
-    // cerr << "all_edges2: " << all_edges2 << endl;
-    // cerr << "l: " << l << endl;
-    // cerr << "approx_m: " << approx_m << endl;
-
-    auto it = all_edges2.begin();
-    auto it2 = it;
-    int loopi;
-    for(loopi=0; loopi < 10000 && approx_m > 0; ++loopi) {
-        if(all_edges2.empty()) {
-            fprintf(stderr, "mrcg(%d, %d): all_edges2={}, approx_m=%d\n", n, orig_approx_m, approx_m);
-            break;
-        }
-        if(it == all_edges2.end()) {
-            it = all_edges2.begin();
-        }
-        it2 = it; ++it2;
-        double weight = std::get<0>(*it);
-        const iipair& p = std::get<1>(*it);
-        if(runidist(0, 1, rng) < (weight/weight_sum)) {
-            --approx_m;
-            l.push_back(p);
-            all_edges2.erase(it);
-            weight_sum -= weight;
-        }
-        it = it2;
-    }
-    if(loopi == 1000) {
-        cerr << "Too much looping\nall_edges2: " << all_edges2 << endl;
+    ivec indices;
+    multi_sample(weights2, approx_m, indices, rng);
+    for(int index: indices) {
+        l.push_back(edges2[index]);
     }
 }

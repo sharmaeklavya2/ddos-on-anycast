@@ -92,4 +92,6 @@ inline typename C::value_type sample_other(const C& v, typename C::value_type x,
     return y;
 }
 
+void multi_sample(const vector<double>& weights, int m, ivec& indices, rng_t& rng);
+
 #endif  // SAMPLE_HPP

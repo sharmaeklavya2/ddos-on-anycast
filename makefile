@@ -44,9 +44,13 @@ ATTACK_HSET := $(LIB_SRCDIR)/attack.hpp $(NETWORK_HSET)
 DAG_HSET := $(LIB_SRCDIR)/dag.hpp $(BASE_HSET)
 SEGTREE_HSET := $(LIB_SRCDIR)/segtree.hpp $(BASE_HSET)
 
-LIB_OBJS := $(LIB_BUILDDIR)/network.o $(LIB_BUILDDIR)/network_grow.o $(LIB_BUILDDIR)/graph_gen.o $(LIB_BUILDDIR)/attack.o $(LIB_BUILDDIR)/place_victims.o $(LIB_BUILDDIR)/dag.o $(LIB_BUILDDIR)/segtree.o
+LIB_OBJS := $(LIB_BUILDDIR)/network.o $(LIB_BUILDDIR)/network_grow.o $(LIB_BUILDDIR)/graph_gen.o $(LIB_BUILDDIR)/attack.o $(LIB_BUILDDIR)/place_victims.o $(LIB_BUILDDIR)/dag.o $(LIB_BUILDDIR)/segtree.o $(LIB_BUILDDIR)/sample.o
 
 $(LIB_BUILDDIR)/network.o: $(LIB_SRCDIR)/network.cpp $(GRAPH_GEN_HSET) $(NETWORK_HSET) $(UTIL_HSET)
+	@mkdir -p $(LIB_BUILDDIR)
+	$(CXX) -c $< -o $@
+
+$(LIB_BUILDDIR)/sample.o: $(LIB_SRCDIR)/sample.cpp $(SEGTREE_HSET)
 	@mkdir -p $(LIB_BUILDDIR)
 	$(CXX) -c $< -o $@
 
