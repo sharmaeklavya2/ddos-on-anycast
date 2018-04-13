@@ -83,6 +83,7 @@ ArgSpec arg_list[] = {
     ArgSpec("tries",        'i',  "1", 1, "Number of tries when sending barrier routers to children"),
     ArgSpec("reps",         'i',  "1", 1, "Number of times this experiment should be repeated"),
     ArgSpec("seed",         'i',  "0", 0, "Seed for random number generator"),
+    ArgSpec("prog_reps",    'i',  "0", 0, "Number of reps between which to print progress"),
 };
 
 const int n_arg_list = sizeof(arg_list) / sizeof(ArgSpec);
@@ -191,6 +192,7 @@ int main(int argc, char* argv[]) {
     if(seed == 0) {
         seed = int(time(NULL));
     }
+    int prog_reps = get_arg_i("prog_reps");
 
     CompleteGraphGen complete_gen(n_top);
     RandomConnectedGraphGen rcgen(n_expand, expand_degree);
@@ -207,6 +209,9 @@ int main(int argc, char* argv[]) {
     bool single_simulation = (reps == 1 && n_n_victims == 1);
 
     for(int repi=0; repi < reps; ++repi) {
+        if(reps > 1 && prog_reps > 0 && repi % prog_reps == 0) {
+            fprintf(stderr, "reps: %d\r", repi);
+        }
         Network network(complete_gen, rng(), false, top_side_conns);
         if(!network.long_sanity_check()) {
             puts("Network has inconsistencies!");
@@ -286,6 +291,9 @@ int main(int argc, char* argv[]) {
     }
 
     if(!single_simulation) {
+        if(reps > 1) {
+            fprintf(stderr, "reps: %d\n", reps);
+        }
         for(int i=0; i<n_n_victims; ++i) {
             int n_victims = n_victims_list[i];
             print_stats("relcatches", n_victims, relcatches[i]);
