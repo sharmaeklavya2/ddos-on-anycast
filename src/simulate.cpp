@@ -87,7 +87,7 @@ ArgSpec arg_list[] = {
 
 const int n_arg_list = sizeof(arg_list) / sizeof(ArgSpec);
 
-void print_stats(const char* name, vector<double>& xs) {
+void print_stats(const char* name, int n_victims, vector<double>& xs) {
     std::sort(xs.begin(), xs.end());
     double xsum = 0;
     double xsum2 = 0;
@@ -102,8 +102,8 @@ void print_stats(const char* name, vector<double>& xs) {
     double q3 = xs[(3*n)/4];
     double q1 = xs[n/4];
 
-    printf("%s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, stddev: %lf, iqd: %lf\n",
-        name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], stddev, q3 - q1);
+    printf("%3d %11s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, stddev: %lf, iqd: %lf\n",
+        n_victims, name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], stddev, q3 - q1);
 }
 
 static void print_usage(FILE* fp, const char* argv0) {
@@ -191,7 +191,6 @@ int main(int argc, char* argv[]) {
     if(seed == 0) {
         seed = int(time(NULL));
     }
-    int n_victims = n_victims_list[0];
 
     CompleteGraphGen complete_gen(n_top);
     RandomConnectedGraphGen rcgen(n_expand, expand_degree);
@@ -199,7 +198,13 @@ int main(int argc, char* argv[]) {
 
     rng_t rng(seed);
 
-    vector<double> relcatches(reps, 0.0), misdisfacts(reps, 0.0);
+    int n_n_victims = n_victims_list.size();
+    vector<vector<double> > relcatches(n_n_victims), misdisfacts(n_n_victims);
+    for(int i=0; i<n_n_victims; ++i) {
+        relcatches[i].resize(reps, 0.0);
+        misdisfacts[i].resize(reps, 0.0);
+    }
+    bool single_simulation = (reps == 1 && n_n_victims == 1);
 
     for(int repi=0; repi < reps; ++repi) {
         Network network(complete_gen, rng(), false, top_side_conns);
@@ -221,7 +226,7 @@ int main(int argc, char* argv[]) {
                 leaves++;
             }
         }
-        if(reps == 1) {
+        if(single_simulation) {
             printf("Vertices: %d\n", network.num_vertices());
             printf("Edges: %d\n", network.num_edges());
             printf("Leaves: %d\n", leaves);
@@ -233,52 +238,62 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        ivec victims, targets;
-        if(smart_distr) {
-            place_victims_using_toposort(network, n_victims, victims, seed, tries, 0.01);
-        }
-        else {
-            place_victims_randomly(network, n_victims, victims, seed);
-        }
-        if(reps == 1) {
-            printf("victims: %d\n\n", int(victims.size()));
-        }
-        attack(network, victims, targets, 1, 100);
+        for(int i=0; i<n_n_victims; ++i) {
+            int n_victims = n_victims_list[i];
 
-        std::map<int, int> freq;
-        for(int v: victims) {
-            freq[v] = 0;
-        }
-        for(int u: network.depthwise.back()) {
-            if(network.netsize[u] == 0) {
-                freq[targets[u]]++;
-            }
-        }
-        vector<iipair> freq2(freq.begin(), freq.end());
-        std::sort(freq2.begin(), freq2.end(), iipair_second_rcmp);
-        double relcatch = double(freq2[0].second) / leaves;
-        double misdisfact = double(freq2[0].second * victims.size()) / leaves;
-        if(reps == 1) {
-            if(victims.size() <= MAX_VICTIMS_TO_DISPLAY) {
-                printf("freqs (victim_id, attackers, relcatch, misdisfact):\n");
-                for(const iipair& p: freq2) {
-                    double relcatch = double(p.second) / leaves;
-                    double misdisfact = double(lli(p.second) * victims.size()) / leaves;
-                    printf("  %5d: %4d: %lf: %lf\n", p.first, p.second, relcatch, misdisfact);
-                }
+            ivec victims, targets;
+            if(smart_distr) {
+                place_victims_using_toposort(network, n_victims, victims, seed, tries, 0.01);
             }
             else {
-                printf("victim_id=%d, attackers=%d, relcatch=%lf, misdisfact=%lf\n",
-                    freq2[0].first, freq2[0].second, relcatch, misdisfact);
+                place_victims_randomly(network, n_victims, victims, seed);
             }
+            if(single_simulation) {
+                printf("victims: %d\n\n", int(victims.size()));
+            }
+            attack(network, victims, targets, 1, 100);
+
+            std::map<int, int> freq;
+            for(int v: victims) {
+                freq[v] = 0;
+            }
+            for(int u: network.depthwise.back()) {
+                if(network.netsize[u] == 0) {
+                    freq[targets[u]]++;
+                }
+            }
+            vector<iipair> freq2(freq.begin(), freq.end());
+            std::sort(freq2.begin(), freq2.end(), iipair_second_rcmp);
+            double relcatch = double(freq2[0].second) / leaves;
+            double misdisfact = double(freq2[0].second * victims.size()) / leaves;
+            if(single_simulation) {
+                if(victims.size() <= MAX_VICTIMS_TO_DISPLAY) {
+                    printf("freqs (victim_id, attackers, relcatch, misdisfact):\n");
+                    for(const iipair& p: freq2) {
+                        double relcatch = double(p.second) / leaves;
+                        double misdisfact = double(lli(p.second) * victims.size()) / leaves;
+                        printf("  %5d: %4d: %lf: %lf\n", p.first, p.second, relcatch, misdisfact);
+                    }
+                }
+                else {
+                    printf("victim_id=%d, attackers=%d, relcatch=%lf, misdisfact=%lf\n",
+                        freq2[0].first, freq2[0].second, relcatch, misdisfact);
+                }
+            }
+            relcatches[i][repi] = relcatch;
+            misdisfacts[i][repi] = misdisfact;
         }
-        relcatches[repi] = relcatch;
-        misdisfacts[repi] = misdisfact;
     }
 
-    if(reps > 1) {
-        print_stats("relcatches", relcatches);
-        print_stats("misdisfacts", misdisfacts);
+    if(!single_simulation) {
+        for(int i=0; i<n_n_victims; ++i) {
+            int n_victims = n_victims_list[i];
+            print_stats("relcatches", n_victims, relcatches[i]);
+        }
+        for(int i=0; i<n_n_victims; ++i) {
+            int n_victims = n_victims_list[i];
+            print_stats("misdisfacts", n_victims, misdisfacts[i]);
+        }
     }
     return 0;
 }
