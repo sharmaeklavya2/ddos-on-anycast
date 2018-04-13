@@ -2,6 +2,7 @@
 #include "lib/graph_gen.hpp"
 #include "lib/place_victims.hpp"
 #include "lib/attack.hpp"
+#include "lib/util.hpp"
 #include <cstring>
 #include <map>
 #include <string>
@@ -28,7 +29,7 @@ static T coalesce(T value, T replacement, bool zero_is_null) {
 
 struct ArgSpec {
     string name;
-    char type;  // 'i' for int, 'f' for double
+    char type;  // 'i' for int, 'f' for double, 's' for string
     string defval_s;
     union {
         int defval_i;
@@ -38,11 +39,12 @@ struct ArgSpec {
         int val_i;
         double val_f;
     };
+    string val_s;
     bool zero_is_null;
     string description;
 
     ArgSpec(const char* _name, char _type, const char* _defval_s, bool _zero_is_null, const char* _description):
-        name(_name), type(_type), defval_s(_defval_s), zero_is_null(_zero_is_null), description(_description) {
+        name(_name), type(_type), defval_s(_defval_s), val_s(_defval_s), zero_is_null(_zero_is_null), description(_description) {
         if(type == 'i') {
             defval_i = val_i = atoi(_defval_s);
         }
@@ -52,6 +54,7 @@ struct ArgSpec {
     }
 
     void set_from_string(const char* s) {
+        val_s = s;
         if(type == 'i') {
             val_i = coalesce(atoi(s), defval_i, zero_is_null);
         }
@@ -121,29 +124,29 @@ static void print_help(FILE* fp) {
 
 std::map<string, int> arg_name_to_index;
 
-int get_arg_i(const char* name) {
+int get_arg_index(const char* name) {
     auto it = arg_name_to_index.find(name);
     if(it == arg_name_to_index.end()) {
         fprintf(stderr, "argument %s not found\n", name);
         return -1;
     }
     else {
-        return arg_list[it->second].val_i;
+        return it->second;
     }
 }
 
+int get_arg_i(const char* name) {
+    return arg_list[get_arg_index(name)].val_i;
+}
 double get_arg_f(const char* name) {
-    auto it = arg_name_to_index.find(name);
-    if(it == arg_name_to_index.end()) {
-        fprintf(stderr, "argument %s not found\n", name);
-        return -1.0;
-    }
-    else {
-        return arg_list[it->second].val_f;
-    }
+    return arg_list[get_arg_index(name)].val_f;
+}
+string get_arg_s(const char* name) {
+    return arg_list[get_arg_index(name)].val_s;
 }
 
 const int MAX_VICTIMS_TO_DISPLAY = 100;
+char buffer[2048];
 
 int main(int argc, char* argv[]) {
 
@@ -178,7 +181,9 @@ int main(int argc, char* argv[]) {
     grow_params.prob_self_side_peering = get_arg_f("p_local_peering");
     int top_side_conns = get_arg_i("top_side_conns");
     int n_layers = get_arg_i("n_layers");
-    int n_victims = get_arg_i("n_victims");
+    ivec n_victims_list;
+    strcpy(buffer, get_arg_s("n_victims").c_str());
+    fill_ivec_from_str(buffer, n_victims_list, ",");
     int smart_distr = get_arg_i("smart_distr");
     int tries = get_arg_i("tries");
     int reps = get_arg_i("reps");
@@ -186,6 +191,7 @@ int main(int argc, char* argv[]) {
     if(seed == 0) {
         seed = int(time(NULL));
     }
+    int n_victims = n_victims_list[0];
 
     CompleteGraphGen complete_gen(n_top);
     RandomConnectedGraphGen rcgen(n_expand, expand_degree);
