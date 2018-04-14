@@ -33,8 +33,4 @@ To compile the project, run
 
 To find out about the command-line arguments run
 
-    build/debug/simulate
-
-To run with default values of command-line arguments, run
-
-    build/debug/simulate -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+    build/debug/simulate --help
