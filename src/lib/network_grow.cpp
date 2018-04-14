@@ -125,7 +125,8 @@ void Network::vgrow(const GrowParams& grow_params, int seed) {
                 u = weighed_sample(items, weights, rng3);
             }
             int u2 = u;
-            if(runidist(0, 1, rng3) > grow_params.prob_self_side_peering) {
+            if(in_nbrs[u].size() + side_nbrs[u].size() > 0 &&
+                runidist(0, 1, rng3) > grow_params.prob_self_side_peering) {
                 u2 = sample(in_nbrs[u], side_nbrs[u], rng3);
             }
             int v2 = sample_other(down_nbrs[u2], v, rng3);
