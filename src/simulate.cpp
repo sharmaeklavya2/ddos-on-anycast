@@ -84,11 +84,12 @@ ArgSpec arg_list[] = {
     ArgSpec("reps",         'i',  "1", 1, "Number of times this experiment should be repeated"),
     ArgSpec("seed",         'i',  "0", 0, "Seed for random number generator"),
     ArgSpec("prog_reps",    'i',  "0", 0, "Number of reps between which to print progress"),
+    ArgSpec("csvout",       'i',  "0", 0, "Output CSV"),
 };
 
 const int n_arg_list = sizeof(arg_list) / sizeof(ArgSpec);
 
-void print_stats(const char* name, int n_victims, vector<double>& xs) {
+void print_stats(const char* name, int n_victims, vector<double>& xs, bool csvout) {
     std::sort(xs.begin(), xs.end());
     double xsum = 0;
     double xsum2 = 0;
@@ -103,8 +104,14 @@ void print_stats(const char* name, int n_victims, vector<double>& xs) {
     double q3 = xs[(3*n)/4];
     double q1 = xs[n/4];
 
-    printf("%3d %11s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, stddev: %lf, iqd: %lf\n",
-        n_victims, name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], stddev, q3 - q1);
+    if(csvout) {
+        printf("%d,%lg,%lg,%lg,%lg,%lg,%lg,%lg\n", n_victims, mean, xs.back(),
+            xs[int(0.9*n)], q3, xs[n/2], stddev, q3-q1);
+    }
+    else {
+        printf("%3d %11s: mean: %lf, max: %lf, 90p: %lf, 75p: %lf, 50p: %lf, stddev: %lf, iqd: %lf\n",
+            n_victims, name, mean, xs.back(), xs[int(0.9*n)], q3, xs[n/2], stddev, q3 - q1);
+    }
 }
 
 static void print_usage(FILE* fp, const char* argv0) {
@@ -193,6 +200,7 @@ int main(int argc, char* argv[]) {
         seed = int(time(NULL));
     }
     int prog_reps = get_arg_i("prog_reps");
+    bool csvout = get_arg_i("csvout");
 
     CompleteGraphGen complete_gen(n_top);
     RandomConnectedGraphGen rcgen(n_expand, expand_degree);
@@ -206,7 +214,7 @@ int main(int argc, char* argv[]) {
         relcatches[i].resize(reps, 0.0);
         misdisfacts[i].resize(reps, 0.0);
     }
-    bool single_simulation = (reps == 1 && n_n_victims == 1);
+    bool single_simulation = (reps == 1 && n_n_victims == 1 && (!csvout));
 
     for(int repi=0; repi < reps; ++repi) {
         if(reps > 1 && prog_reps > 0 && repi % prog_reps == 0) {
@@ -294,13 +302,18 @@ int main(int argc, char* argv[]) {
         if(reps > 1) {
             fprintf(stderr, "reps: %d\n", reps);
         }
-        for(int i=0; i<n_n_victims; ++i) {
-            int n_victims = n_victims_list[i];
-            print_stats("relcatches", n_victims, relcatches[i]);
+        if(csvout) {
+            printf("n_victims,r_mean,r_max,r_90p,r_75p,r_50p,r_stddev,r_iqd\n");
         }
         for(int i=0; i<n_n_victims; ++i) {
             int n_victims = n_victims_list[i];
-            print_stats("misdisfacts", n_victims, misdisfacts[i]);
+            print_stats("relcatches", n_victims, relcatches[i], csvout);
+        }
+        if(!csvout) {
+            for(int i=0; i<n_n_victims; ++i) {
+                int n_victims = n_victims_list[i];
+                print_stats("misdisfacts", n_victims, misdisfacts[i], csvout);
+            }
         }
     }
     return 0;
