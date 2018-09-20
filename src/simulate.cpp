@@ -78,9 +78,9 @@ ArgSpec arg_list[] = {
     ArgSpec("top_side_conns",   'i',   "2", 1, "Number of peering links between any 2 top level ISPs"),
     ArgSpec("n_layers",         'i',   "2", 1, "Number of layers in network"),
 
-    ArgSpec("n_victims",    's', "10", 1, "Number of barrier routers"),
-    ArgSpec("smart_distr",  'i',  "1", 0, "Distribute barrier routers hierarchically"),
-    ArgSpec("tries",        'i',  "1", 1, "Number of tries when sending barrier routers to children"),
+    ArgSpec("n_victims",    's', "10", 1, "Number of anycasted victims"),
+    ArgSpec("smart_distr",  'i',  "1", 0, "Distribute anycasted victims hierarchically"),
+    ArgSpec("tries",        'i',  "1", 1, "Number of tries when sending anycasted victims to children"),
     ArgSpec("reps",         'i',  "1", 1, "Number of times this experiment should be repeated"),
     ArgSpec("seed",         'i',  "0", 0, "Seed for random number generator"),
     ArgSpec("prog_reps",    'i',  "0", 0, "Number of reps between which to print progress"),
