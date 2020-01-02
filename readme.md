@@ -36,3 +36,6 @@ To compile the project, run
 To find out about the command-line arguments run
 
     build/debug/simulate --help
+
+If you're on MacOS, you may need to add `-mmacosx-version-min=10.7 -stdlib=libc++`
+to compilation flags in the makefile.

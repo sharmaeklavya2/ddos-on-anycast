@@ -2,7 +2,7 @@ LIB_SRCDIR := src/lib
 LIB_SOURCES := $(wildcard $(LIB_SRCDIR)/*.cpp)
 LIB_HEADERS := $(wildcard $(LIB_SRCDIR)/*.h)
 
-COMMON_FLAGS := -std=c++11 -Wall -Wpedantic
+COMMON_FLAGS := -std=c++11 -Wall -Wpedantic # -mmacosx-version-min=10.7 -stdlib=libc++
 DEBUG_FLAGS := -D DEBUG -g $(COMMON_FLAGS)
 RELEASE_FLAGS := -D NDEBUG -O2 $(COMMON_FLAGS)
 
@@ -29,8 +29,8 @@ clean:
 	rm -rf var $(MASTER_BUILDDIR)
 	rm -f $(MAIN_OUTPUT)
 	rm -f gmon.out
-	find -name "*.pyc" -type f -delete
-	find -name "__pycache__" -type d -delete
+	find . -name "*.pyc" -type f -delete
+	find . -name "__pycache__" -type d -delete
 
 # Lib files
 
