@@ -118,6 +118,8 @@ public:
     // add children to all leaves
 };
 
-ostream& operator<<(ostream&, const Network&);
+namespace std {
+    ostream& operator<<(ostream&, const Network&);
+}
 
 #endif  // NETWORK_HPP

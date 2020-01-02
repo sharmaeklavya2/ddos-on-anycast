@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <random>
 
-#include "/mnt/code/OJ/lib/cpp/prettyprint.hpp"
+#include "prettyprint.hpp"
 
 #define MAYBE_INLINE static inline
 

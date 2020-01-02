@@ -145,9 +145,11 @@ void Network::print(FILE* fp, bool print_virtual) const {
     }
 }
 
-ostream& operator<<(ostream& os, const Network& network) {
-    network.print(os);
-    return os;
+namespace std {
+    ostream& operator<<(ostream& os, const Network& network) {
+        network.print(os);
+        return os;
+    }
 }
 
 bool Network::basic_sanity_check() const {
